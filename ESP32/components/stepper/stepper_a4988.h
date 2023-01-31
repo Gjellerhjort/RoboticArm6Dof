@@ -1,4 +1,4 @@
-#include "stepper.c"
+#include "stepper_a4988.c"
 #ifndef STEPPER_H
 #define STEPPER_H
 
@@ -8,6 +8,9 @@ extern "C" {
 #endif
 
 void call_stepper();
+void stepper_Init();
+void stepper_moveStep(uint8_t motor_num, uint16_t steps,  uint8_t direction);
+void stepper_setSpeed(uint16_t new_timer_period);
 
 #ifdef __cplusplus
 }

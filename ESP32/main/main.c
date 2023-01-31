@@ -10,7 +10,7 @@
 #include "esp_system.h"
 
 // custom components 
-#include "stepper.h"
+#include "stepper_a4988.h"
 
 #define LED_PIN 2
 #define LED2_PIN 4
@@ -24,11 +24,11 @@
 void led2_callback(void *arg)
 {
     while (1) {
-        ESP_LOGI("led2_loop", "Core Id: %d\n", esp_cpu_get_core_id());
-        gpio_set_level(LED2_PIN, 1);
-        vTaskDelay(LED_DELAY / portTICK_PERIOD_MS);
-        gpio_set_level(LED2_PIN, 0);
-        vTaskDelay(LED_DELAY / portTICK_PERIOD_MS);
+        ESP_LOGI("Motor Speed", "Core Id: %d\n", esp_cpu_get_core_id());
+        stepper_setSpeed(2500);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_setSpeed(1200);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -54,7 +54,7 @@ void app_main() {
     gpio_set_direction(LED2_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(LED3_PIN, GPIO_MODE_OUTPUT);
 
-
+    stepper_Init();
 
     xTaskCreatePinnedToCore(
         led2_callback, // function call name
@@ -77,7 +77,7 @@ void app_main() {
     );
 
     while(1) {
-        call_stepper();
+        stepper_moveStep(1, 10000, 1);
         gpio_set_level(LED_PIN, 1);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(LED_PIN, 0);
