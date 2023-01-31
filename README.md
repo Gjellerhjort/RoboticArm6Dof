@@ -1,13 +1,13 @@
 # RoboticArm6Dof
 A Robot Arm with  6 steppers controlled with a esp32 coded in embeded C.
-* ESP32
+## ESP32
 
 This is the code for the esp32 to controll the robot arm in this  project the esp32 will be programmet with the ESP-IDF(Espressif IoT Development Framework)
-* InverseKinematics
+## InverseKinematics
 
 This is a test and calculation of inverse kinematics with simulation of robot arm in 3D plot. 
 
-* 6_stepperMega2560
+## 6_stepperMega2560
 
 This is the code to control 6 stepper with a Arduino mega coded in embedded C. 
 

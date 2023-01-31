@@ -5,11 +5,12 @@
 #include "freertos/task.h"
 
 #include "driver/gpio.h"
-#include "driver/timer.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
-#include "esp_spi_flash.h"
+
+// custom components 
+#include "stepper.h"
 
 #define LED_PIN 2
 #define LED2_PIN 4
@@ -19,7 +20,6 @@
 #define LED_TIMER_IDX TIMER_0
 #define LED_DELAY 500 // 1 ms
 
-volatile int8_t led_state = 0;
 
 void led2_callback(void *arg)
 {
@@ -77,7 +77,7 @@ void app_main() {
     );
 
     while(1) {
-        ESP_LOGI("main_loop", "Core Id: %d\n", esp_cpu_get_core_id());
+        call_stepper();
         gpio_set_level(LED_PIN, 1);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(LED_PIN, 0);
