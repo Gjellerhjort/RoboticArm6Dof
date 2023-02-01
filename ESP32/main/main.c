@@ -16,18 +16,35 @@
 #define LED2_PIN 4
 #define LED3_PIN 25
 
-#define LED_TIMER_GROUP TIMER_GROUP_0
-#define LED_TIMER_IDX TIMER_0
-#define LED_DELAY 500 // 1 ms
+// definere Stepper Step pin
+#define STEPPER_1_STEP 27 //defining STEP pin of first motor
+#define STEPPER_2_STEP 19    
+#define STEPPER_3_STEP 5
+#define STEPPER_4_STEP 16
+#define STEPPER_5_STEP 0
+#define STEPPER_6_STEP 15
 
+// definere Stepper DIR pin
+#define STEPPER_1_DIR 26 //defining DIR pin of first motor
+#define STEPPER_2_DIR 23
+#define STEPPER_3_DIR 18
+#define STEPPER_4_DIR 17
+#define STEPPER_5_DIR 4
+#define STEPPER_6_DIR 2
+
+#define LED_DELAY 1000
+// MicroStepping
+#define MS1 14
+#define MS2 12
+#define MS3 13
 
 void led2_callback(void *arg)
 {
     while (1) {
         ESP_LOGI("Motor Speed", "Core Id: %d\n", esp_cpu_get_core_id());
-        stepper_setSpeed(2500);
+        stepper_moveMicrostep(0, 200,  1, 1);
         vTaskDelay(3000 / portTICK_PERIOD_MS);
-        stepper_setSpeed(1200);
+        stepper_moveMicrostep(0, 200*16,  0, 16);
         vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
@@ -55,6 +72,10 @@ void app_main() {
     gpio_set_direction(LED3_PIN, GPIO_MODE_OUTPUT);
 
     stepper_Init();
+    stepper_config(1, STEPPER_1_STEP, STEPPER_1_DIR);
+    microstepping_config(MS1, MS2, MS3);
+
+
 
     xTaskCreatePinnedToCore(
         led2_callback, // function call name
@@ -63,7 +84,7 @@ void app_main() {
         NULL, // task paramerters
         5, // task proirity
         NULL, // task handler 
-        1 // CPU core 
+        0 // CPU core 
     );
 
     xTaskCreatePinnedToCore(
@@ -77,7 +98,6 @@ void app_main() {
     );
 
     while(1) {
-        stepper_moveStep(1, 10000, 1);
         gpio_set_level(LED_PIN, 1);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(LED_PIN, 0);
