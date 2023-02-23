@@ -11,6 +11,7 @@
 
 // custom components 
 #include "stepper_a4988.h"
+#include "servo.h"
 
 #define LED_PIN 2
 #define LED2_PIN 4
@@ -39,34 +40,26 @@
 #define MS3 13
 
 
-#define LED_TIMER_GROUP TIMER_GROUP_0
-#define LED_TIMER_IDX TIMER_0
-#define LED_DELAY 500 // 1 ms
+//#define LED_TIMER_GROUP TIMER_GROUP_0
+//#define LED_TIMER_IDX TIMER_0
+//#define LED_DELAY 500 // 1 ms
 
 
 void led2_callback(void *arg)
 {
     while (1) {
-        stepper_moveMicrostep(1, 200, 1, 1);
-        vTaskDelay(6000 / portTICK_PERIOD_MS);
-        stepper_moveMicrostep(1, 200*2, 1, 2);
-        vTaskDelay(6000 / portTICK_PERIOD_MS);
-        stepper_moveMicrostep(1, 200*4, 1, 4);
-        vTaskDelay(6000 / portTICK_PERIOD_MS);
-        stepper_moveMicrostep(1, 200*8, 1, 8);
-        vTaskDelay(6000 / portTICK_PERIOD_MS);
-        stepper_moveMicrostep(1, 200*16, 1, 16);
-        vTaskDelay(6000 / portTICK_PERIOD_MS);
-    }
-}
-
-void led3_callback(void *arg)
-{
-    while (1) {
-        gpio_set_level(LED3_PIN, 1);
-        vTaskDelay(LED_DELAY / portTICK_PERIOD_MS*4);
-        gpio_set_level(LED3_PIN, 0);
-        vTaskDelay(LED_DELAY / portTICK_PERIOD_MS*4);
+        stepper_moveMicrostep(1, 20000, 1, 1);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_setSpeed(3000);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_setSpeed(2500);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_setSpeed(2000);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_setSpeed(1500);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_setSpeed(1400);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -96,16 +89,6 @@ void app_main() {
         5, // task proirity
         NULL, // task handler 
         1 // CPU core 
-    );
-
-    xTaskCreatePinnedToCore(
-        led3_callback, // function call name
-        "blink_led3_task", // taksk name
-        2048, // stack size
-        NULL, // task paramerters
-        5, // task proirity
-        NULL, // task handler 
-        tskNO_AFFINITY // CPU core
     );
 
     while(1) {
