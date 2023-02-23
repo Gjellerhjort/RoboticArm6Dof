@@ -17,6 +17,9 @@
 #define LED2_PIN 4
 #define LED3_PIN 25
 
+// definere servo pin
+#define SERVO_PIN 25
+
 // definere Stepper Step pin
 #define STEPPER_1_STEP 27 //defining STEP pin of first motor
 #define STEPPER_2_STEP 19    
@@ -77,6 +80,8 @@ void app_main() {
     stepper_config(1, STEPPER_1_STEP, STEPPER_1_DIR);
     microstepping_config(MS1, MS2, MS3);
     stepper_Init();
+
+    servo_init();
     
     void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction, uint8_t stepping_resolution);
 
@@ -92,10 +97,9 @@ void app_main() {
     );
 
     while(1) {
-        stepper_moveStep(1, 10000, 1);
-        gpio_set_level(LED_PIN, 1);
+        servo_move(0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        gpio_set_level(LED_PIN, 0);
+        servo_move(180);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

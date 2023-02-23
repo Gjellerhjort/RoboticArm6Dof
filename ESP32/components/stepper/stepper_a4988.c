@@ -3,6 +3,9 @@
 #include "esp_log.h"
 #include <esp_timer.h>
 #include <driver/gpio.h>
+
+static const char *StepperTAG = "Stepper Driver";
+
 // Timer
 esp_timer_handle_t timer_handle;
 volatile uint16_t INTERVAL_US = 2000;
@@ -24,7 +27,7 @@ typedef struct StepperInfo {
     volatile uint16_t currentPos; // steps done by the stepper
     volatile uint8_t step_direction; // what direction the stepper is rotating
     volatile uint16_t speed; // current speed interval in US
-    volatile uint16_t lastspeed; // last speed interval in US
+    volatile uint16_t last_speed; // last speed interval in US
     volatile uint16_t max_speed; // the minium interval before the stepper resonate in US
     volatile uint16_t n;
 } StepperInfo;
@@ -36,11 +39,11 @@ volatile StepperInfo steppers[NUM_STEPPERS];
 
 void call_stepper()
 {
-    ESP_LOGI("Stepper Driver" ,"Hello from Stepper driver");
+    ESP_LOGI(StepperTAG, "Hello from Stepper driver");
 }
 
 void stepper_setMircostepping(uint8_t motor_num ,uint8_t res){
-    ESP_LOGI("Stepper Driver" ,"Stepper divider:%d", res);
+    ESP_LOGI(StepperTAG, "Stepper divider:%d", res);
     switch (res)
     {
         case 2: // Half step
@@ -164,7 +167,7 @@ void computeNewSpeed(uint8_t motor_num)
 
 // move micro stepper without linear motion
 void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction, uint8_t stepping_resolution) {
-    ESP_LOGI("stepper driver", "steps runing");
+    ESP_LOGI(StepperTAG, "steps runing");
     // motor 1A steps
     steppers[motor_num-1].targetPos = steps;
     steppers[motor_num-1].currentPos = 0;
@@ -174,7 +177,7 @@ void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction
 
 // Funktion der tager bevæger en motor et bestemt antal steps i en retning
 void stepper_moveStep(uint8_t motor_num, uint16_t steps,  uint8_t direction) {
-    ESP_LOGI("stepper driver", "steps runing");
+    ESP_LOGI(StepperTAG, "steps runing");
     // motor 1A steps
     steppers[motor_num-1].targetPos = steps;
     steppers[motor_num-1].step_direction = direction;
@@ -251,5 +254,5 @@ void stepper_start_timer()
 void stepper_Init()
 {
     stepper_start_timer();
-    ESP_LOGI("Stepper Driver" ,"All Pins Init");
+    ESP_LOGI(StepperTAG, "All Pins Init");
 }
