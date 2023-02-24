@@ -29,7 +29,7 @@ typedef struct StepperInfo {
     volatile uint16_t speed; // current speed interval in US
     volatile uint16_t last_speed; // last speed interval in US
     volatile uint16_t max_speed; // the minium interval before the stepper resonate in US
-    volatile uint16_t n;
+    volatile uint16_t n; // a variable needed for accelstepper
 } StepperInfo;
 
 // antal stepper i ens kredsløb
@@ -78,6 +78,7 @@ void stepper_setMircostepping(uint8_t motor_num ,uint8_t res){
     }
 }
 
+// ISP loop function
 static void stepper_timer_callback(void* arg)
 {
     for (int i = 0; i < NUM_STEPPERS; i++)
@@ -113,7 +114,7 @@ uint8_t distanceToGo(uint8_t motor_num)
     return steppers[motor_num].targetPos - steppers[motor_num].currentPos;
 }
 
-void computeNewSpeed(uint8_t motor_num) 
+void computeNewSpeed(uint8_t motor_num)
 {
     long distanceTo = distanceToGo(motor_num); // +ve is clockwise from curent location
 
@@ -127,42 +128,43 @@ void computeNewSpeed(uint8_t motor_num)
 	steppers[motor_num].n = 0;
 	return;
     }
-    /**
         if (distanceTo > 0)
     {
+
+        
 	// We are anticlockwise from the target
 	// Need to go clockwise from here, maybe decelerate now
-	if (_n > 0)
+	if (steppers[motor_num].n > 0)
 	{
 	    // Currently accelerating, need to decel now? Or maybe going the wrong way?
-	    if ((stepsToStop >= distanceTo) || _direction == DIRECTION_CCW)
-		_n = -stepsToStop; // Start deceleration
+	    if ((stepsToStop >= distanceTo) || steppers[motor_num].dir_pin == 1)
+		steppers[motor_num].n = -stepsToStop; // Start deceleration
 	}
-	else if (_n < 0)
+	else if (steppers[motor_num].n < 0)
 	{
 	    // Currently decelerating, need to accel again?
-	    if ((stepsToStop < distanceTo) && _direction == DIRECTION_CW)
-		_n = -_n; // Start accceleration
+	    if ((stepsToStop < distanceTo) && steppers[motor_num].dir_pin == 0)
+		steppers[motor_num].n = -steppers[motor_num].n; // Start accceleration
 	}
     }
     else if (distanceTo < 0)
     {
 	// We are clockwise from the target
 	// Need to go anticlockwise from here, maybe decelerate
-	if (_n > 0)
+	if (steppers[motor_num].n > 0)
 	{
 	    // Currently accelerating, need to decel now? Or maybe going the wrong way?
-	    if ((stepsToStop >= -distanceTo) || _direction == DIRECTION_CW)
-		_n = -stepsToStop; // Start deceleration
+	    if ((stepsToStop >= -distanceTo) || steppers[motor_num].dir_pin == 0)
+		steppers[motor_num].n = -stepsToStop; // Start deceleration
 	}
-	else if (_n < 0)
+	else if (steppers[motor_num].n < 0)
 	{
 	    // Currently decelerating, need to accel again?
-	    if ((stepsToStop < -distanceTo) && _direction == DIRECTION_CCW)
-		n = -_n; // Start accceleration
+	    if ((stepsToStop < -distanceTo) && steppers[motor_num].dir_pin == 1)
+		steppers[motor_num].n = -steppers[motor_num].n; // Start accceleration
 	}
     }
-    **/
+
 }
 
 // move micro stepper without linear motion

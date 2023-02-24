@@ -17,7 +17,7 @@ static const char *ServoTAG = "Servo Driver";
 
 mcpwm_cmpr_handle_t comparator = NULL;
 
-static inline uint32_t example_angle_to_compare(uint8_t angle)
+static inline uint32_t angle_to_compare(uint8_t angle)
 {
     return (angle - SERVO_MIN_DEGREE) * (SERVO_MAX_PULSEWIDTH_US - SERVO_MIN_PULSEWIDTH_US) / (SERVO_MAX_DEGREE - SERVO_MIN_DEGREE) + SERVO_MIN_PULSEWIDTH_US;
 }
@@ -57,7 +57,7 @@ void servo_init()
     ESP_ERROR_CHECK(mcpwm_new_generator(oper, &generator_config, &generator));
 
     // set the initial compare value, so that the servo will spin to the center position
-    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator, example_angle_to_compare(0)));
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator, angle_to_compare(0)));
 
     ESP_LOGI(ServoTAG, "Set generator action on timer and compare event");
     // go high on counter empty
@@ -74,6 +74,6 @@ void servo_init()
 
 void servo_move(uint8_t angle)
 {
-    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator, example_angle_to_compare(angle)));
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator, angle_to_compare(angle)));
 }
 
