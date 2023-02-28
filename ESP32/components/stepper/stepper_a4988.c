@@ -26,14 +26,27 @@ typedef struct StepperInfo {
     volatile uint16_t targetPos; // steps that the stepper have to perform
     volatile uint16_t currentPos; // steps done by the stepper
     volatile uint8_t step_direction; // what direction the stepper is rotating
-    volatile uint16_t speed; // current speed interval in US
-    volatile uint16_t last_speed; // last speed interval in US
-    volatile uint16_t max_speed; // the minium interval before the stepper resonate in US
-    volatile uint16_t n; // a variable needed for accelstepper
+    volatile float speed; // current speed interval in US
+    volatile float last_speed; // last speed interval in US
+    volatile float max_speed; // the minium interval before the stepper resonate in US
+     /// The current interval between steps in microseconds.
+    /// 0 means the motor is currently stopped with _speed == 0
+    volatile uint16_t step_interval;
+    volatile int16_t n; // The step counter for speed calculations
+    volatile uint16_t cn; // Last step size in microseconds
+    volatile uint16_t c0; // Initial step size in microseconds
+    /// Min step size in microseconds based on maxSpeed
+    volatile uint16_t cmin; // at max speed
 } StepperInfo;
 
 // antal stepper i ens kredsløb
 #define NUM_STEPPERS 1
+
+/* Function declarations */
+int max(int num1, int num2)
+{
+    return (num1 > num2 ) ? num1 : num2;
+}
 
 volatile StepperInfo steppers[NUM_STEPPERS];
 
@@ -101,6 +114,7 @@ static void stepper_timer_callback(void* arg)
     }
 }
 
+// sets the interval of the timer and updates it.
 void stepper_setSpeed(uint16_t new_timer_period) 
 {
 
@@ -109,11 +123,13 @@ void stepper_setSpeed(uint16_t new_timer_period)
     esp_timer_restart(timer_handle, INTERVAL_US);
 }
 
+// calculates the distance to target postion
 uint8_t distanceToGo(uint8_t motor_num)
 {
     return steppers[motor_num].targetPos - steppers[motor_num].currentPos;
 }
 
+// calculate new step interval for stepper
 void computeNewSpeed(uint8_t motor_num)
 {
     long distanceTo = distanceToGo(motor_num); // +ve is clockwise from curent location
@@ -138,13 +154,17 @@ void computeNewSpeed(uint8_t motor_num)
 	{
 	    // Currently accelerating, need to decel now? Or maybe going the wrong way?
 	    if ((stepsToStop >= distanceTo) || steppers[motor_num].dir_pin == 1)
-		steppers[motor_num].n = -stepsToStop; // Start deceleration
+        {
+		    steppers[motor_num].n = -stepsToStop; // Start deceleration
+        }
 	}
 	else if (steppers[motor_num].n < 0)
 	{
 	    // Currently decelerating, need to accel again?
 	    if ((stepsToStop < distanceTo) && steppers[motor_num].dir_pin == 0)
-		steppers[motor_num].n = -steppers[motor_num].n; // Start accceleration
+        {
+		    steppers[motor_num].n = -steppers[motor_num].n; // Start accceleration
+        }
 	}
     }
     else if (distanceTo < 0)
@@ -155,17 +175,50 @@ void computeNewSpeed(uint8_t motor_num)
 	{
 	    // Currently accelerating, need to decel now? Or maybe going the wrong way?
 	    if ((stepsToStop >= -distanceTo) || steppers[motor_num].dir_pin == 0)
-		steppers[motor_num].n = -stepsToStop; // Start deceleration
+        {
+		    steppers[motor_num].n = -stepsToStop; // Start deceleration
+        }
 	}
 	else if (steppers[motor_num].n < 0)
 	{
 	    // Currently decelerating, need to accel again?
 	    if ((stepsToStop < -distanceTo) && steppers[motor_num].dir_pin == 1)
-		steppers[motor_num].n = -steppers[motor_num].n; // Start accceleration
+		{
+            steppers[motor_num].n = -steppers[motor_num].n; // Start accceleration
+        }
 	}
     }
 
+    // Need to accelerate or decelerate
+    if (steppers[motor_num].n == 0)
+    {
+	    // First step from stopped
+	    steppers[motor_num].cn = steppers[motor_num].c0;
+	    steppers[motor_num].step_direction = (distanceTo > 0) ? 0 : 1;
+    }
+    else
+    {
+	    // Subsequent step. Works for accel (n is +ve) and decel (n is -ve).
+	    steppers[motor_num].cn = steppers[motor_num].cn - ((2.0 * steppers[motor_num].cn) / ((4.0 * steppers[motor_num].n) + 1)); // Equation 13
+	    steppers[motor_num].cn = max(steppers[motor_num].cn, steppers[motor_num].cmin); 
+    }
+    
+    steppers[motor_num].n++;
+    steppers[motor_num].step_interval = steppers[motor_num].cn;
+    steppers[motor_num].speed = 1000000.0 / steppers[motor_num].cn;
+    if (steppers[motor_num].step_direction == 1)
+    {
+	    steppers[motor_num].speed = -steppers[motor_num].speed;
+    }
+
 }
+
+// Run the motor to implement speed and acceleration in order to proceed to the target position
+// You must call this at least once per step, preferably in your main loop
+// If the motor is in the desired position, the cost is very small
+// returns true if the motor is still running to the target position.
+// need run function
+
 
 // move micro stepper without linear motion
 void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction, uint8_t stepping_resolution) {

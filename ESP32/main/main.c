@@ -12,6 +12,7 @@
 // custom components 
 #include "stepper_a4988.h"
 #include "servo.h"
+#include "AS5600.h"
 
 #define LED_PIN 2
 #define LED2_PIN 4
@@ -41,7 +42,6 @@
 #define MS1 14
 #define MS2 12
 #define MS3 13
-
 
 //#define LED_TIMER_GROUP TIMER_GROUP_0
 //#define LED_TIMER_IDX TIMER_0
@@ -96,10 +96,12 @@ void app_main() {
         1 // CPU core 
     );
 
-    while(1) {
+    while(1) 
+    {
         servo_move(0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         servo_move(180);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+
 }
