@@ -103,7 +103,7 @@ static void stepper_timer_callback(void* arg)
                 stepper_setMircostepping(i, steppers[i].step_res);
                 steppers[i].step_res = 0;
 
-            }
+            }   
             // makes step 
             gpio_set_level(steppers[i].step_pin, 1); // sets STEP pin HIGH
             gpio_set_level(steppers[i].step_pin, 0); // sets STEP pin LOW
@@ -235,6 +235,7 @@ void stepper_moveStep(uint8_t motor_num, uint16_t steps,  uint8_t direction) {
     ESP_LOGI(StepperTAG, "steps runing");
     // motor 1A steps
     steppers[motor_num-1].targetPos = steps;
+    steppers[motor_num-1].currentPos = 0;
     steppers[motor_num-1].step_direction = direction;
 }
 

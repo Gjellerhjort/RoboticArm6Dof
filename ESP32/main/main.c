@@ -5,14 +5,17 @@
 #include "freertos/task.h"
 
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
 
 // custom components 
 #include "stepper_a4988.h"
-#include "servo.h"
-#include "AS5600.h"
+//#include "servo.h"
+#include "TCA9548A.h"
+#include "PCF8574.h"
+//#include "AS5600.h"
 
 #define LED_PIN 2
 #define LED2_PIN 4
@@ -43,32 +46,28 @@
 #define MS2 12
 #define MS3 13
 
-//#define LED_TIMER_GROUP TIMER_GROUP_0
-//#define LED_TIMER_IDX TIMER_0
-//#define LED_DELAY 500 // 1 ms
+#define I2C_SLAVE_ADDR	0x20
+#define TIMEOUT_MS		1000
+#define DELAY_MS		1000
+
+#define PCF8574_ADDR 0x20
+
+uint8_t rx_data[8];
 
 
 void led2_callback(void *arg)
 {
     while (1) {
-        stepper_moveMicrostep(1, 20000, 1, 1);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        stepper_setSpeed(3000);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        stepper_setSpeed(2500);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        stepper_setSpeed(2000);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        stepper_setSpeed(1500);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        stepper_setSpeed(1400);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        ESP_LOGI("Stepper:", "stepper call");
+        stepper_moveStep(1, 200*19, 1);
+        vTaskDelay(7000 / portTICK_PERIOD_MS);
+        stepper_moveStep(1, 200*19, 0);
+        vTaskDelay(7000 / portTICK_PERIOD_MS);
     }
 }
-
 void app_main() {
-    char *ourTaskName = pcTaskGetName(NULL);
-    ESP_LOGI(ourTaskName, "Hello Starting\n");
+    char *Tag = pcTaskGetName(NULL);
+    ESP_LOGI(Tag, "Hello Starting\n");
     
     gpio_reset_pin(LED_PIN);
     gpio_reset_pin(LED2_PIN);
@@ -80,12 +79,13 @@ void app_main() {
     stepper_config(1, STEPPER_1_STEP, STEPPER_1_DIR);
     microstepping_config(MS1, MS2, MS3);
     stepper_Init();
-
-    servo_init();
-    
+    stepper_setSpeed(1800);
     void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction, uint8_t stepping_resolution);
-
-
+    /**
+    servo_init();
+    **/
+    PCF8574_Init();
+    
     xTaskCreatePinnedToCore(
         led2_callback, // function call name
         "blink_led2_task", // taksk name
@@ -98,10 +98,19 @@ void app_main() {
 
     while(1) 
     {
+        /*
+        for (int i = 0; i < 8; i++)
+        {
+            ESP_LOGE("I2C:", "%02X", TCA9548A_readByte(0,i));
+        }
+        */
+		vTaskDelay(DELAY_MS/portTICK_PERIOD_MS);
+        /*
         servo_move(0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         servo_move(180);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+        */
+    }   
 
 }
