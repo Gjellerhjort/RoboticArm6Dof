@@ -134,6 +134,8 @@ void app_main()
         TCA9548A_selectBUS(4);
         AS5600_read();
         vTaskDelay(2000 / portTICK_PERIOD_MS);
+        uint8_t input_val = PCF8574_readByte();
+        ESP_LOGI("PCF88574:", "%X", input_val);
     }   
 
 }
