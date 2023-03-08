@@ -50,7 +50,13 @@
 #define TIMEOUT_MS		1000
 #define DELAY_MS		1000
 
+#define I2C_MASTER_NUM I2C_NUM_0
+
 #define PCF8574_ADDR 0x20
+#define TCA9548A_ADDR 0x70
+#define AS5600_ADDR_BASE 0x36
+
+
 
 uint8_t rx_data[8];
 
@@ -58,14 +64,11 @@ uint8_t rx_data[8];
 void led2_callback(void *arg)
 {
     while (1) {
-        ESP_LOGI("Stepper:", "stepper call");
-        stepper_moveStep(1, 200*19, 1);
-        vTaskDelay(7000 / portTICK_PERIOD_MS);
-        stepper_moveStep(1, 200*19, 0);
-        vTaskDelay(7000 / portTICK_PERIOD_MS);
+        vTaskDelay(4000 / portTICK_PERIOD_MS);
     }
 }
-void app_main() {
+void app_main() 
+{
     char *Tag = pcTaskGetName(NULL);
     ESP_LOGI(Tag, "Hello Starting\n");
     
@@ -85,6 +88,7 @@ void app_main() {
     servo_init();
     **/
     PCF8574_Init();
+    //TCA9548A_Init();
     
     xTaskCreatePinnedToCore(
         led2_callback, // function call name
@@ -98,19 +102,75 @@ void app_main() {
 
     while(1) 
     {
-        /*
-        for (int i = 0; i < 8; i++)
+        // Enable all channels on TCA9548A
+        uint8_t data = 0xFF;
+        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (TCA9548A_ADDR << 1) | I2C_MASTER_WRITE, true);
+        i2c_master_write_byte(cmd, 0x01, true);
+        i2c_master_write_byte(cmd, data, true);
+        i2c_master_stop(cmd);
+        i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+        i2c_cmd_link_delete(cmd);
+            // Scan each channel for AS5600 sensors
+        for (int channel = 0; channel < 8; channel++) 
         {
-            ESP_LOGE("I2C:", "%02X", TCA9548A_readByte(0,i));
+            data = 1 << channel;
+            cmd = i2c_cmd_link_create();
+            i2c_master_start(cmd);
+            i2c_master_write_byte(cmd, (TCA9548A_ADDR << 1) | I2C_MASTER_WRITE, true);
+            i2c_master_write_byte(cmd, 0x01, true);
+            i2c_master_write_byte(cmd, data, true);
+            i2c_master_stop(cmd);
+            i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+            i2c_cmd_link_delete(cmd);
+
+            // Scan for AS5600 sensors on this channel
+            int sensor = 0;
+                uint8_t addr = AS5600_ADDR_BASE | (channel << 1);
+                i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+                i2c_master_start(cmd);
+                i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true);
+                i2c_master_stop(cmd);
+                esp_err_t err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+                i2c_cmd_link_delete(cmd);
+
+                if (err == ESP_OK) 
+                {
+                    // AS5600 sensor found on this channel
+                    // Read data from the sensor using i2c_master_read()
+
+                    // Set the register address to read from (e.g. angle register)
+                    uint8_t reg_addr = 0x0E;
+                    cmd = i2c_cmd_link_create();
+                    i2c_master_start(cmd);
+                    i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true);
+                    i2c_master_write_byte(cmd, reg_addr, true);
+                    i2c_master_stop(cmd);
+                    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+                    i2c_cmd_link_delete(cmd);
+
+                    // Read data from the sensor (e.g. angle value)
+                    uint8_t angle_data[2];
+                    cmd = i2c_cmd_link_create();
+                    i2c_master_start(cmd);
+                    i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_READ, true);
+                    i2c_master_read_byte(cmd, &angle_data[0], I2C_MASTER_ACK);
+                    i2c_master_read_byte(cmd, &angle_data[1], I2C_MASTER_NACK);
+                    i2c_master_stop(cmd);
+                    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+                    i2c_cmd_link_delete(cmd);
+
+                    // Process the angle data
+                    uint16_t angle = (angle_data[0] << 8) | angle_data[1];
+                    uint8_t val = PCF8574_readByte();
+                    ESP_LOGI("PCF8574 byte:","%X" , val);
+                    ESP_LOGI("Sensor: ", "%d", sensor);
+                    ESP_LOGI("Angle: ", "%hu", angle);
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                    // ...
+                }
         }
-        */
-		vTaskDelay(DELAY_MS/portTICK_PERIOD_MS);
-        /*
-        servo_move(0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        servo_move(180);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        */
     }   
 
 }
