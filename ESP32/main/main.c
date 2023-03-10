@@ -12,10 +12,18 @@
 
 // custom components 
 #include "stepper_a4988.h"
-//#include "servo.h"
+#include "servo.h"
 #include "TCA9548A.h"
 #include "PCF8574.h"
 #include "AS5600.h"
+
+/*
+timer usses
+timer 0 stepper driver
+
+timer 2 servo driver
+
+*/
 
 #define LED_PIN 2
 #define LED2_PIN 4
@@ -80,7 +88,10 @@ void led2_callback(void *arg)
 {
     while (1) {
         //i2c_scan();
-        vTaskDelay(4000 / portTICK_PERIOD_MS);
+        //servo_move(90);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        //servo_move(180);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 void app_main() 
@@ -97,12 +108,11 @@ void app_main()
 
     stepper_config(1, STEPPER_1_STEP, STEPPER_1_DIR);
     microstepping_config(MS1, MS2, MS3);
-    stepper_Init();
+    //stepper_Init();
     stepper_setSpeed(1800);
     void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction, uint8_t stepping_resolution);
-    /**
     servo_init();
-    **/
+
     PCF8574_Init();
     //TCA9548A_Init();
     

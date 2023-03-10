@@ -7,6 +7,7 @@
 
 void PCF8574_Init()
 {
+    // konfiguerer i2c indstillinger
     i2c_config_t conf = {
 		.mode = I2C_MODE_MASTER,
 		.sda_io_num = 21,
@@ -38,7 +39,11 @@ uint8_t PCF8574_readByte()
     uint8_t input_val;
     i2c_master_read_byte(cmd, &input_val, I2C_MASTER_LAST_NACK);
     i2c_master_stop(cmd);
-    i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
+    esp_err_t err = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE("PCF8574", "Error Reading Byte: %d", err);
+    }
     i2c_cmd_link_delete(cmd);
     return input_val;
 }
