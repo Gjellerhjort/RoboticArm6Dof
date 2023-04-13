@@ -40,7 +40,7 @@ typedef struct StepperInfo {
 } StepperInfo;
 
 // antal stepper i ens kredsløb
-#define NUM_STEPPERS 1
+#define NUM_STEPPERS 5
 
 /* Function declarations */
 int max(int num1, int num2)
@@ -102,9 +102,8 @@ static void stepper_timer_callback(void* arg)
             {
                 stepper_setMircostepping(i, steppers[i].step_res);
                 steppers[i].step_res = 0;
-
             }   
-            // makes step 
+            // makes step
             gpio_set_level(steppers[i].step_pin, 1); // sets STEP pin HIGH
             gpio_set_level(steppers[i].step_pin, 0); // sets STEP pin LOW
             steppers[i].currentPos++;

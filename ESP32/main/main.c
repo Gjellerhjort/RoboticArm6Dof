@@ -33,20 +33,18 @@ timer 2 servo driver
 #define SERVO_PIN 25
 
 // definere Stepper Step pin
-#define STEPPER_1_STEP 27 //defining STEP pin of first motor
-#define STEPPER_2_STEP 19    
-#define STEPPER_3_STEP 5
-#define STEPPER_4_STEP 16
-#define STEPPER_5_STEP 0
-#define STEPPER_6_STEP 15
+#define STEPPER_1_STEP 3 //defining STEP pin of first motor
+#define STEPPER_2_STEP 18    
+#define STEPPER_3_STEP 17
+#define STEPPER_4_STEP 4
+#define STEPPER_5_STEP 15
 
 // definere Stepper DIR pin
-#define STEPPER_1_DIR 26 //defining DIR pin of first motor
-#define STEPPER_2_DIR 23
-#define STEPPER_3_DIR 18
-#define STEPPER_4_DIR 17
-#define STEPPER_5_DIR 4
-#define STEPPER_6_DIR 2
+#define STEPPER_1_DIR 19 //defining DIR pin of first motor
+#define STEPPER_2_DIR 5
+#define STEPPER_3_DIR 16
+#define STEPPER_4_DIR 2
+#define STEPPER_5_DIR 0
 
 #define LED_DELAY 1000
 // MicroStepping
@@ -89,9 +87,18 @@ void led2_callback(void *arg)
     while (1) {
         //i2c_scan();
         //servo_move(90);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-        //servo_move(180);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        stepper_moveStep(1, 200, 0);
+        stepper_moveStep(2, 200, 0);
+        stepper_moveStep(3, 200, 0);
+        stepper_moveStep(4, 200, 0);
+        stepper_moveStep(5, 200, 1);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        stepper_moveStep(1, 200 , 1);
+        stepper_moveStep(2, 200, 1);
+        stepper_moveStep(3, 200, 1);
+        stepper_moveStep(4, 200, 1);
+        stepper_moveStep(5, 200, 1);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 void app_main() 
@@ -107,11 +114,14 @@ void app_main()
     gpio_set_direction(LED3_PIN, GPIO_MODE_OUTPUT);
 
     stepper_config(1, STEPPER_1_STEP, STEPPER_1_DIR);
+    stepper_config(2, STEPPER_2_STEP, STEPPER_2_DIR);
+    stepper_config(3, STEPPER_3_STEP, STEPPER_3_DIR);
+    stepper_config(4, STEPPER_4_STEP, STEPPER_4_DIR);
+    stepper_config(5, STEPPER_5_STEP, STEPPER_5_DIR);
     microstepping_config(MS1, MS2, MS3);
-    //stepper_Init();
+    stepper_Init();
     stepper_setSpeed(1800);
-    void stepper_moveMicrostep(uint8_t motor_num, uint16_t steps,  uint8_t direction, uint8_t stepping_resolution);
-    servo_init();
+    //servo_init();
 
     PCF8574_Init();
     //TCA9548A_Init();
@@ -131,21 +141,8 @@ void app_main()
         ESP_LOGI(Tag,"BUS 1:");
         TCA9548A_selectBUS(0);
         AS5600_read();
-        ESP_LOGI(Tag,"BUS 2:");
-        TCA9548A_selectBUS(1);
-        AS5600_read();
-        ESP_LOGI(Tag,"BUS 3:");
-        TCA9548A_selectBUS(2);
-        AS5600_read();
-        ESP_LOGI(Tag,"BUS 4:");
-        TCA9548A_selectBUS(3);
-        AS5600_read();
-        ESP_LOGI(Tag,"BUS 5:");
-        TCA9548A_selectBUS(4);
-        AS5600_read();
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-        uint8_t input_val = PCF8574_readByte();
-        ESP_LOGI("PCF88574:", "%X", input_val);
+        i2c_scan();
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }   
 
 }
