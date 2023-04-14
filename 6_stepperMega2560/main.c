@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <avr/interrupt.h>
+
+#include "servo.h"
 #include "stepper_a4988.h"
+#include "i2c.h"
 
 // definere Stepper Step pin
 #define STEPPER_1_STEP PA0 //defining STEP pin of first motor
@@ -21,15 +24,11 @@
 #define STEPPER_4_DIR PA7
 #define STEPPER_5_DIR PC6
 
-long map(long x, long in_min, long in_max, long out_min, long out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
 int main(void) 
 {
     UART_Init();
     stepper_Init();
+    servo_init();
     stepper_config(1, STEPPER_1_STEP, STEPPER_1_DIR);
     stepper_config(2, STEPPER_2_STEP, STEPPER_2_DIR);
     stepper_config(3, STEPPER_3_STEP, STEPPER_3_DIR);
@@ -50,6 +49,10 @@ int main(void)
       stepper_moveStep(3, 1000, 0);
       stepper_moveStep(4, 50, 0);
       stepper_moveStep(5, 100, 0);
+      _delay_ms(3000);
+      servo_set_position(180);
+      _delay_ms(3000);
+      servo_set_position(0);
       _delay_ms(3000);
     }
 }

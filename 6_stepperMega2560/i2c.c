@@ -4,7 +4,7 @@
 #define PCF8572_ADDR 0x20
 
 // Define the AS5600 sensor I2C address
-#define AS5600_SENSOR_ADDR 0x36
+#define AS5600_ADDR 0x36
 
 // Define the AS5600 sensor command for reading the angle measurement
 #define AS5600_ANGLE_CMD 0x0C
@@ -54,12 +54,12 @@ uint8_t PCF8572_read()
 {
     uint8_t data;
     i2c_start(); // Send start condition
-    i2c_write(SLAVE_ADDRESS << 1 | 0x01); // Send slave address with read bit
+    i2c_write(PCF8572_ADDR << 1 | 0x01); // Send slave address with read bit
     data = i2c_read(0); // Read the data from the IO expander with NACK
     i2c_stop(); // Send stop condition
     return data;
 }
-
+/*
 void TCA9548A_selectBUS(uint8_t BUS)
 {
     i2c_start();
@@ -67,16 +67,17 @@ void TCA9548A_selectBUS(uint8_t BUS)
     i2c_read();
     i2c_stop();
 }
-
+*/
 uint16_t AS5600_read()
 {
     uint16_t angle;
     i2c_start(); // Send start condition
-    i2c_write(SLAVE_ADDRESS << 1 | 0x00); // Send slave address with write bit
-    i2c_write(ANGLE_REG_ADDRESS); // Send address of the angle register
+    i2c_write(AS5600_ADDR << 1 | 0x00); // Send slave address with write bit
+    i2c_write(AS5600_ANGLE_CMD); // Send address of the angle register
     i2c_stop(); // Send stop condition
     i2c_start(); // Send start condition
-    i2c_write(SLAVE_ADDRESS << 1 | 0x01); // Send slave address with read bit
-    data = i2c_read(0); // Read the data from the IO expander with NACK
+    i2c_write(AS5600_ADDR << 1 | 0x01); // Send slave address with read bit
+    angle = i2c_read(0); // Read the data from the IO expander with NACK
     i2c_stop(); // Send stop condition
+    return angle;
 }
