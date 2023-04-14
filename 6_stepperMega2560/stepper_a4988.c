@@ -58,14 +58,17 @@ void stepper_config(uint8_t step_num, uint8_t step_pin, uint8_t dir_pin)
     steppers[i].targetPos = 0;
     if (i<4)
     {
+        UART_TxString("porta stepper");
+        UART_Newline();
         DDRA |= (1 << step_pin) | (1 << dir_pin);
     }
     else
     {
         UART_TxString("portc stepper");
+        UART_Newline();
         DDRC |= (1 << step_pin) | (1 << dir_pin);
     }
-
+    _delay_ms(100);
 }
 
 void microstepping_config(uint8_t ms1_pin, uint8_t ms2_pin, uint8_t ms3_pin)
@@ -134,12 +137,11 @@ ISR(TIMER1_COMPA_vect)
 
                 // makes step
                 PORTA |= (1<<steppers[i].step_pin); //generate step
-                //_delay_us(10);
                 PORTA &= ~(1<<steppers[i].step_pin);
             }
             else
             {
-                PORTC = (PORTA & ~(1 << steppers[i].dir_pin)) | (steppers[i].step_direction << steppers[i].dir_pin);
+                PORTC = (PORTC & ~(1 << steppers[i].dir_pin)) | (steppers[i].step_direction << steppers[i].dir_pin);
                 PORTC |= (1<<steppers[i].step_pin); //generate step
                 PORTC &= ~(1<<steppers[i].step_pin);
             }
