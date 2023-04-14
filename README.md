@@ -1,4 +1,8 @@
+
 # RoboticArm6Dof
+![Lines of code](https://img.shields.io/tokei/lines/github/gjellerhjort/RoboticArm6Dof)
+
+
 A Robot Arm with  6 steppers controlled with a esp32 coded in embeded C.
 ## ESP32
 
