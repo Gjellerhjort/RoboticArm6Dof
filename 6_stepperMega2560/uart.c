@@ -14,7 +14,7 @@ void UART_TxChar(unsigned char data)
     UDR0 = data;
 }
 
-void UART_TxNumber(unsigned int num)
+void UART_TxNumber(int num)
 {
  
        UART_TxChar((num/10000)+0x30);

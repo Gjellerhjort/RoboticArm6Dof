@@ -1,6 +1,8 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <avr/io.h>
+#include <sys/types.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include "uart.h"
@@ -20,6 +22,7 @@ typedef struct StepperInfo {
     // stepper variables
     float acceleration;
     volatile uint8_t step_res; // step size resolution (microstepping)
+    volatile uint16_t steps__resolution; // step per resolution
     volatile uint16_t targetPos; // steps that the stepper have to perform
     volatile uint16_t currentPos; // steps done by the stepper
     volatile uint8_t step_direction; // what direction the stepper is rotating
@@ -48,7 +51,7 @@ void stepper_Init()
     sei(); //enable global interrupt
 }
 
-void stepper_config(uint8_t step_num, uint8_t step_pin, uint8_t dir_pin)
+void stepper_config(uint8_t step_num, uint8_t step_pin, uint8_t dir_pin, uint16_t steps__resolution)
 {
     uint8_t i = step_num-1;
     steppers[i].step_pin = step_pin;
@@ -56,18 +59,12 @@ void stepper_config(uint8_t step_num, uint8_t step_pin, uint8_t dir_pin)
     steppers[i].currentPos = 0;
     steppers[i].step_direction = 1;
     steppers[i].targetPos = 0;
-    if (i<4)
-    {
-        UART_TxString("porta stepper");
-        UART_Newline();
-        DDRA |= (1 << step_pin) | (1 << dir_pin);
-    }
-    else
-    {
-        UART_TxString("portc stepper");
-        UART_Newline();
-        DDRC |= (1 << step_pin) | (1 << dir_pin);
-    }
+    steppers[i].steps__resolution = steps__resolution;
+
+    UART_TxString("porta stepper");
+    UART_Newline();
+    DDRA |= (1 << step_pin) | (1 << dir_pin);
+
     _delay_ms(100);
 }
 
@@ -87,6 +84,8 @@ void stepper_setMircostepping(uint8_t motor_num ,uint8_t res){
     switch (res)
     {
         case 2: // Half step
+            UART_TxString("microstep");
+            UART_Newline();
             PORTC |= (1<<steppers[motor_num].ms1_pin);
             PORTC &= ~(1<<steppers[motor_num].ms2_pin);
             PORTC &= ~(1<<steppers[motor_num].ms3_pin);
@@ -131,10 +130,9 @@ ISR(TIMER1_COMPA_vect)
                 steppers[i].step_res = 0;
             }
        
-            if (i<4)
+            if (i>0)
             {
                 PORTA = (PORTA & ~(1 << steppers[i].dir_pin)) | (steppers[i].step_direction << steppers[i].dir_pin);
-
                 // makes step
                 PORTA |= (1<<steppers[i].step_pin); //generate step
                 PORTA &= ~(1<<steppers[i].step_pin);
@@ -142,13 +140,14 @@ ISR(TIMER1_COMPA_vect)
             else
             {
                 PORTC = (PORTC & ~(1 << steppers[i].dir_pin)) | (steppers[i].step_direction << steppers[i].dir_pin);
+                // make step
                 PORTC |= (1<<steppers[i].step_pin); //generate step
                 PORTC &= ~(1<<steppers[i].step_pin);
             }
 
             steppers[i].currentPos++;
         } else {
-            if (i<4)
+            if (i>0)
             {
                 PORTA &= ~(1<<steppers[i].step_pin);
             }
@@ -176,12 +175,49 @@ void stepper_move2000(uint8_t direction)
         steppers[0].step_direction = direction;
     }
 
+uint8_t distanceToGo(uint8_t motor_num)
+{
+    return steppers[motor_num-1].targetPos - steppers[motor_num-1].currentPos;
+}
+
+uint16_t findClosestSteps(uint8_t motor_num, uint16_t deg) {
+    float step_deg = steppers[motor_num-1].steps__resolution/360;
+    uint16_t steps = (deg / step_deg) + 0.5; // convert degrees to steps, round to nearest integer
+    uint16_t lower_steps = (steps / steppers[motor_num-1].steps__resolution) * steppers[motor_num-1].steps__resolution; // calculate closest lower multiple of STEPS_PER_REV
+    uint16_t upper_steps = lower_steps + steppers[motor_num-1].steps__resolution; // calculate closest upper multiple of STEPS_PER_REV
+    if (steps - lower_steps < upper_steps - steps) {
+        return lower_steps;
+    } else {
+        return upper_steps;
+    }
+}
+
 // Funktion der tager bevæger en motor et bestemt antal steps i en retning
 void stepper_moveStep(uint8_t motor_num, uint16_t steps,  uint8_t direction) {
     // motor 1A steps
     steppers[motor_num-1].targetPos = steps;
     steppers[motor_num-1].currentPos = 0;
     steppers[motor_num-1].step_direction = direction;
+}
+
+void stepper_moveTo(uint8_t motor_num, uint16_t deg) {
+    // motor 1A steps
+    UART_TxString("CurrentPos:");
+    UART_TxNumber(steppers[motor_num-1].currentPos);
+    UART_Newline();
+    int distanceTo = distanceToGo(motor_num-1); // +ve is clockwise from curent location
+    UART_TxString("distanceTo");
+    UART_TxNumber(distanceTo);
+    UART_Newline();
+    float distanceToDeg = (distanceTo / 360.0) * steppers[motor_num-1].steps__resolution;
+
+    steppers[motor_num-1].step_direction = (distanceTo > 0) ? 1 : 0;
+
+    int16_t steps = findClosestSteps(motor_num, distanceToDeg);
+    UART_TxString("moveTo");
+    UART_TxNumber(steps);
+    UART_Newline();
+    steppers[motor_num-1].targetPos = steps;
 }
 
 // move micro stepper without linear motion
